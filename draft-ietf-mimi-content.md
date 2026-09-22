@@ -1083,7 +1083,7 @@ In summary, this consists of:
 
 Most CBOR libraries automatically use the shortest form and use definite length. Support for bigints is optional and is not required by any if the values built into the MIMI Content specification. Most implementations of CBOR which support bigints can automatically reduce to regular ints.
 
-The only map inside the MIMI content format is the extensions map. Many popular implementations of CBOR do not yet support map sorting in the order described in Section 4.2.1 of [@!RFC8949], but preserve map order. Therefore it should be straightforward for MIMI content extensions to present their maps in the correct order. Implementations MUST NOT send MIMI content in [@?RFC7094] "canonical" order.
+The only map inside the MIMI content format is the extensions map. Many popular implementations of CBOR do not yet support map sorting in the order described in Section 4.2.1 of [@!RFC8949], but preserve map order. Therefore it should be straightforward for MIMI content extensions to present their maps in the correct order. Implementations MUST NOT send MIMI content in [@?RFC7049] "canonical" order.
 
 ## Data model restrictions
 
