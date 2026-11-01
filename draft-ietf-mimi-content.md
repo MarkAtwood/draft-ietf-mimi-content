@@ -104,7 +104,7 @@ by the CBOR playground website (https://cbor.me) with some minor whitespace
 and comment reformatting. Finally, a message ID for the message is included
 for most messages.
 
-All the instance documents validate using the CDDL schemas in Appendix B and
+All the instance documents validate using the CDDL schemas in (#cddl-schemas) and
 are included in the examples directory in the github repo for this document.
 
 ## Naming schemes
@@ -313,7 +313,7 @@ unknownExtension = (
    name => value
 )
 name = int / tstr .size (1..255)
-value = any .size (0..4095)
+value = any
 ```
 
 An IANA registry (#keys-registry) is defined for
@@ -492,7 +492,7 @@ content does not expire.
 ExternalPart = (
     cardinality: external,
     contentType: tstr,     ; An IANA media type {8}
-    url: uri,              ; A URL where the content can be fetched
+    url: tstr,             ; A URL where the content can be fetched
     expires: uint .size 4, ; expiration in seconds since UNIX epoch
     size: uint .size 8,    ; size of content in octets
     encAlg: uint .size 2,  ; An IANA AEAD Algorithm number, or zero
@@ -520,7 +520,8 @@ IANA-registered Authenticated Encryption with Additional Data (AEAD)
 algorithm as described in [@!RFC5116]. The key, nonce, and additional
 authenticated data (aad) values are set to the values used during the
 encryption. Unless modified by an extension, the default value of the
-`aad` is empty.
+`aad` is empty. The `contentHash` is computed over the content as stored
+at the URL, which is the ciphertext when `encAlg` is not zero.
 
 If the external URL is a service, or the external content is not considered
 private, the `encAlg` is set to zero, and the `key`, `nonce`, and `aad`
@@ -547,17 +548,18 @@ MessageDerivedValues = [
     hubAcceptedTimestamp: Timestamp,
     mlsGroupId: bstr,                  ; value always available {12}
     senderLeafIndex: uint .size 4,     ; value always available {13}
-    senderClientUrl: uri               ; {14},
-    senderUserUrl: uri,                ; "From" {15}
-    roomUrl: uri                       ; "To"   {16}
+    senderClientUrl: MsgUri,           ; {14}
+    senderUserUrl: MsgUri,             ; "From" {15}
+    roomUrl: MsgUri                    ; "To"   {16}
 ]
 
+MsgUri = tstr
 MessageId = bstr .size 32
 Timestamp = MsecsSinceEpoch / ExtendedTime
 ; milliseconds since start of UNIX epoch
 MsecsSinceEpoch = uint .size 8
 ; extended time from RFC9581
-ExtendedTime = #6.1001({* name => value })
+ExtendedTime = #6.1001({* etimeKey => etimeValue })
 ```
 
 # Examples
@@ -585,7 +587,7 @@ CBOR playground website (https://cbor.me) with some minor whitespace and
 comment reformatting. Finally, a message ID for the message is included for
 most messages.
 
-All the instance documents validate using the CDDL schemas in Appendix B and
+All the instance documents validate using the CDDL schemas in (#cddl-schemas) and
 are included in the examples directory in the github repo for this document.
 
 ## Original Message
@@ -670,8 +672,8 @@ The annotated EDN follows, then the pretty printed CBOR.
    40                                   # bytes(0)
    f6                                   # primitive(22)
    58 20                                # bytes(32)
-      01b0084467273cc43d6f0ebeac13eb84
-      229c4fffe8f6c3594c905f47779e5a79
+      017ce54837404c3696e0c747b985cb17
+      2716d0ed0a3d249ca63ace7d82a096f4
    a2                                   # map(2)
       01                                # unsigned(1)
       78 1e                             # text(30)
@@ -707,8 +709,8 @@ modeled on the reaction Content-Disposition token defined in [@RFC9078].
 Both indicate that the intended disposition of the
 contents of the message is a reaction.
 
-The content in the sample message is a single Unicode heart character (U+2665)
-which is expressed in UTF-8 as the three octet sequence 0xe299a5.
+The content in the sample message is a single Unicode heart character (U+2764)
+which is expressed in UTF-8 as the three octet sequence 0xe29da4.
 Often a single text reaction consists of multiple Unicode characters. For
 example, the five Unicode characters for a medium skin-toned, female health
 worker (U+1F469 U+1F3FD U+200D U+2695 U+FE0F: woman, medium skin tone, combined
@@ -744,8 +746,8 @@ Below is the annotated message in EDN and pretty printed CBOR:
    40                                   # bytes(0)
    f6                                   # primitive(22)
    58 20                                # bytes(32)
-      01b0084467273cc43d6f0ebeac13eb84
-      229c4fffe8f6c3594c905f47779e5a79
+      017ce54837404c3696e0c747b985cb17
+      2716d0ed0a3d249ca63ace7d82a096f4
    a2                                   # map(2)
       01                                # unsigned(1)
       78 25                             # text(37)
@@ -1063,8 +1065,9 @@ Clients beginning a new "topic" populate the `topicId` with a unique
 opaque octet string. This could be the message ID of the first message
 sent related to the topic. Subsequent messages may include the same
 `topicId` for those messages to be associated with the same topic. The sort order
-for messages within a thread uses the timestamp field. If more than
-one message has the same timestamp, the lexically lowest message ID
+for messages within a thread uses its estimate of the sender timestamp. The hub
+accepted timestamp (`hubAcceptedTimestamp`) is preferred if it is available
+If more than one message has the same timestamp, the lexically lowest message ID
 sorts earlier.
 
 
@@ -1580,7 +1583,7 @@ application, should render the text like any other link.
 
 
 
-# CDDL Schemas
+# CDDL Schemas {#cddl-schemas}
 
 Below are Concise Data Definition Language (CDDL) [@!RFC8610] schemas for
 the formats described in the body of the document.
