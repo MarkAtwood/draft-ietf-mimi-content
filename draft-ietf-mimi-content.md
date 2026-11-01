@@ -1077,6 +1077,12 @@ sorts earlier.
 
 MIMI content documents MUST be encoded using CBOR "deterministic" serialization as defined in Section 4.2.1 of [@!RFC8949].
 
+Receivers MUST reject a MIMI content document that uses indefinite length
+encoding or contains duplicate map keys. Receivers SHOULD accept a document
+whose maps are unsorted or which does not use the shortest encoding. Many CBOR
+libraries do not expose these details when decoding, and accepting them keeps
+all members of a room seeing the same messages.
+
 In summary, this consists of:
 
 - using the shortest CBOR encoding of integers, tags, and floats, and the shortest encoding of the length of byte strings, text strings, arrays, and maps.
@@ -1390,6 +1396,8 @@ represent malicious messages. These should be logged and discarded.
     expiration)
   - refers to a date more than a year in the future (possible with both
     relative and absolute expiration)
+* encoding
+  - uses indefinite length encoding or contains duplicate map keys
 * body
   - has too many body parts (more than 1024)
   - is nested too deeply (more than 4 levels deep)
